@@ -11,14 +11,8 @@ courier_core/
 ├── __init__.py
 ├── __manifest__.py
 ├── models/
-│   ├── __init__.py
-│   ├── courier_customer.py      # Model pelanggan
-│   ├── courier_shipment.py      # Model pengiriman/resi
-│   └── courier_incident.py      # Model insiden (UTAMA)
 ├── views/
-│   └── courier_incident_views.xml
 ├── security/
-│   └── ir.model.access.csv
 └── README.md
 ```
 
