@@ -8,6 +8,7 @@ class CourierIncident(models.Model):
     """Model to manage courier operational incidents"""
     _name = 'courier.incident'
     _description = 'Courier Incident Log'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'incident_datetime desc, id desc'
 
     name = fields.Char(
@@ -33,12 +34,14 @@ class CourierIncident(models.Model):
     
     incident_type = fields.Selection(
         selection=[
-            ('health', 'Health Issue'),
-            ('lost_item', 'Lost Item'),
-            ('delay', 'Delay'),
-            ('other', 'Other'),
+            ('package_damage', 'Kerusakan Paket'),
+            ('delivery_delay', 'Keterlambatan Pengiriman'),
+            ('package_lost', 'Paket Hilang'),
+            ('courier_health', 'Masalah Kesehatan Kurir'),
+            ('accident', 'Kecelakaan'),
+            ('other', 'Lainnya'),
         ],
-        string='Tipe',
+        string='Tipe Insiden',
         default='other',
         required=True,
         tracking=True,
@@ -55,9 +58,10 @@ class CourierIncident(models.Model):
     
     severity = fields.Selection(
         selection=[
-            ('low', 'Low'),
-            ('medium', 'Medium'),
-            ('high', 'High'),
+            ('low', 'Rendah'),
+            ('medium', 'Sedang'),
+            ('high', 'Tinggi'),
+            ('critical', 'Kritis'),
         ],
         string='Urgensi',
         default='low',
@@ -97,6 +101,12 @@ class CourierIncident(models.Model):
         help='Date and time when the incident was resolved'
     )
     
+    color = fields.Integer(
+        string='Color Index',
+        default=0,
+        help='Color for kanban view'
+    )
+    
     # Button Actions
     def action_mark_followup(self):
         """Change state to follow-up"""
@@ -109,6 +119,14 @@ class CourierIncident(models.Model):
             record.write({
                 'state': 'done',
                 'resolved_at': fields.Datetime.now(),
+            })
+    
+    def action_reset_to_draft(self):
+        """Reset incident back to draft state"""
+        for record in self:
+            record.write({
+                'state': 'draft',
+                'resolved_at': False,
             })
     
     # Python Validation (Optional Challenge)

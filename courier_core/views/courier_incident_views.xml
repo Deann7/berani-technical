@@ -1,109 +1,294 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Tree View -->
+    <!-- Kanban View - Modern Card Layout -->
+    <record id="view_courier_incident_kanban" model="ir.ui.view">
+        <field name="name">courier.incident.kanban</field>
+        <field name="model">courier.incident</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="shipment_id"/>
+                <field name="incident_type"/>
+                <field name="severity"/>
+                <field name="state"/>
+                <field name="incident_datetime"/>
+                <field name="color"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                            <div class="courier_kanban_header">
+                                <div class="courier_kanban_title">
+                                    <field name="name"/>
+                                </div>
+                                <div style="font-size: 11px; opacity: 0.9;">
+                                    <i class="fa fa-clock-o"/> <field name="incident_datetime" widget="date"/>
+                                </div>
+                            </div>
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_body">
+                                    <div style="margin-bottom: 8px;">
+                                        <span t-attf-class="courier_kanban_badge courier_badge_#{record.severity.raw_value}">
+                                            <i class="fa fa-exclamation-triangle"/> <field name="severity"/>
+                                        </span>
+                                    </div>
+                                    <div style="margin-bottom: 6px;">
+                                        <strong><i class="fa fa-tag"/> Tipe:</strong> <field name="incident_type"/>
+                                    </div>
+                                    <div style="margin-bottom: 6px;" t-if="record.customer_id.raw_value">
+                                        <strong><i class="fa fa-user"/> Pelanggan:</strong> <field name="customer_id"/>
+                                    </div>
+                                    <div t-if="record.shipment_id.raw_value">
+                                        <strong><i class="fa fa-barcode"/> Resi:</strong> <field name="shipment_id"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Tree View - Enhanced with better decorations -->
     <record id="view_courier_incident_tree" model="ir.ui.view">
         <field name="name">courier.incident.tree</field>
         <field name="model">courier.incident</field>
         <field name="arch" type="xml">
             <list string="Incident Log" 
-                  decoration-warning="state == 'followup'"
-                  decoration-success="state == 'done'">
+                  decoration-danger="severity == 'critical'"
+                  decoration-warning="severity == 'high' or state == 'followup'"
+                  decoration-success="state == 'done'"
+                  decoration-muted="state == 'done'"
+                  sample="1">
                 <field name="name" string="Judul Insiden"/>
                 <field name="customer_id" string="Pelanggan"/>
                 <field name="shipment_id" string="No. Resi" optional="show"/>
                 <field name="incident_type" string="Tipe"/>
-                <field name="incident_datetime" string="Waktu"/>
-                <field name="severity" string="Urgensi"/>
+                <field name="incident_datetime" string="Waktu Kejadian"/>
+                <field name="severity" string="Urgensi" widget="badge" 
+                       decoration-info="severity == 'low'"
+                       decoration-warning="severity == 'medium'"
+                       decoration-danger="severity in ['high', 'critical']"/>
                 <field name="state" string="Status" widget="badge" 
                        decoration-info="state == 'draft'"
                        decoration-warning="state == 'followup'"
                        decoration-success="state == 'done'"/>
                 <field name="resolved_at" string="Selesai pada" optional="hide"/>
+                <field name="color" column_invisible="1"/>
             </list>
         </field>
     </record>
 
+    <!-- Form View - Enhanced with better layout -->
     <record id="view_courier_incident_form" model="ir.ui.view">
         <field name="name">courier.incident.form</field>
         <field name="model">courier.incident</field>
         <field name="arch" type="xml">
-                 <form string="Incident Detail">
+            <form string="Incident Detail">
                 <header>
                     <button name="action_mark_followup" 
-                            string="Mark Follow-up" 
+                            string="🔄 Tandai Follow-up" 
                             type="object"
-                            class="oe_highlight"
+                            class="oe_highlight btn-berani"
                             invisible="state != 'draft'"/>
                     <button name="action_resolve" 
-                            string="Resolve" 
+                            string="✅ Selesaikan Insiden" 
                             type="object"
-                            class="oe_highlight"
+                            class="oe_highlight btn-berani"
                             invisible="state != 'followup'"/>
+                    <button name="action_reset_to_draft" 
+                            string="↩️ Kembalikan ke Draft" 
+                            type="object"
+                            invisible="state == 'draft'"/>
                     <field name="state" widget="statusbar" 
-                           statusbar_visible="draft,followup,done"/>
+                           statusbar_visible="draft,followup,done"
+                           options="{'clickable': '1'}"/>
                 </header>
                 <sheet>
+                    <!-- Title Section -->
                     <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
                         <h1>
-                            <field name="name" placeholder="e.g., Paket Rusak di Gudang Jakarta"/>
+                            <field name="name" 
+                                   placeholder="e.g., Paket Rusak di Gudang Jakarta Pusat"
+                                   required="1"/>
                         </h1>
                     </div>
 
+                    <!-- Main Information -->
                     <group>
-                        <group string="Informasi Dasar">
-                            <field name="customer_id"/>
-                            <field name="shipment_id"/>
-                            <field name="incident_type"/>
-                            <field name="incident_datetime"/>
+                        <group string="📋 Informasi Dasar">
+                            <field name="customer_id" 
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="shipment_id" 
+                                   options="{'no_create': True}"/>
+                            <field name="incident_type" required="1"/>
+                            <field name="incident_datetime" required="1"/>
                         </group>
-                        <group string="Klasifikasi">
-                            <field name="severity" widget="radio"/>
-                            <field name="resolved_at" invisible="state != 'done'"/>
+                        <group string="⚠️ Klasifikasi &amp; Status">
+                            <field name="severity" widget="priority" required="1"/>
+                            <field name="color" widget="color_picker"/>
+                            <field name="resolved_at" 
+                                   readonly="1"
+                                   invisible="state != 'done'"/>
                         </group>
                     </group>
 
+                    <!-- Alert Box for Critical Incidents -->
+                    <div class="alert alert-danger" 
+                         role="alert" 
+                         invisible="severity != 'critical' or state == 'done'">
+                        <strong>⚠️ INSIDEN KRITIS!</strong> 
+                        Insiden ini memerlukan perhatian segera dan tindakan prioritas tinggi.
+                    </div>
+
+                    <!-- Notebook with Details -->
                     <notebook>
-                        <page string="Detail Insiden">
+                        <page string="📝 Detail Insiden" name="details">
                             <group>
                                 <field name="description" 
-                                       placeholder="Jelaskan kronologi kejadian secara detail..."
+                                       widget="html"
+                                       placeholder="Jelaskan kronologi kejadian secara detail:&#10;- Apa yang terjadi?&#10;- Kapan tepatnya insiden terjadi?&#10;- Siapa yang terlibat?&#10;- Apa dampaknya?"
+                                       nolabel="1"
+                                       required="1"/>
+                            </group>
+                        </page>
+                        <page string="🔧 Tindak Lanjut" name="followup">
+                            <group>
+                                <field name="followup_note" 
+                                       widget="html"
+                                       placeholder="Catat tindakan yang telah atau akan diambil:&#10;- Langkah-langkah penanganan&#10;- PIC yang bertanggung jawab&#10;- Timeline penyelesaian&#10;- Solusi yang diterapkan"
                                        nolabel="1"/>
                             </group>
                         </page>
-                        <page string="Tindak Lanjut">
+                        <page string="📊 Informasi Tambahan" name="additional_info">
                             <group>
-                                <field name="followup_note" 
-                                       placeholder="Catat tindakan yang telah atau akan diambil..."
-                                       nolabel="1"/>
+                                <group string="Metadata">
+                                    <field name="create_uid" readonly="1"/>
+                                    <field name="create_date" readonly="1"/>
+                                    <field name="write_uid" readonly="1"/>
+                                    <field name="write_date" readonly="1"/>
+                                </group>
                             </group>
                         </page>
                     </notebook>
                 </sheet>
+                <!-- Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
+
+    <!-- Search View - Advanced Filters -->
+    <record id="view_courier_incident_search" model="ir.ui.view">
+        <field name="name">courier.incident.search</field>
+        <field name="model">courier.incident</field>
+        <field name="arch" type="xml">
+            <search string="Cari Insiden">
+                <field name="name" string="Judul Insiden" 
+                       filter_domain="[('name', 'ilike', self)]"/>
+                <field name="customer_id" string="Pelanggan"/>
+                <field name="shipment_id" string="No. Resi"/>
+                <field name="incident_type" string="Tipe Insiden"/>
+                
+                <!-- Filters -->
+                <separator/>
+                <filter string="📝 Draft" name="filter_draft" 
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="🔄 Follow-up" name="filter_followup" 
+                        domain="[('state', '=', 'followup')]"/>
+                <filter string="✅ Selesai" name="filter_done" 
+                        domain="[('state', '=', 'done')]"/>
+                
+                <separator/>
+                <filter string="🔴 Kritis" name="filter_critical" 
+                        domain="[('severity', '=', 'critical')]"/>
+                <filter string="🟠 Tinggi" name="filter_high" 
+                        domain="[('severity', '=', 'high')]"/>
+                <filter string="🟡 Sedang" name="filter_medium" 
+                        domain="[('severity', '=', 'medium')]"/>
+                <filter string="🟢 Rendah" name="filter_low" 
+                        domain="[('severity', '=', 'low')]"/>
+                
+                <separator/>
+                <filter string="📦 Kerusakan Paket" name="filter_damage" 
+                        domain="[('incident_type', '=', 'package_damage')]"/>
+                <filter string="⏰ Keterlambatan" name="filter_delay" 
+                        domain="[('incident_type', '=', 'delivery_delay')]"/>
+                <filter string="❌ Paket Hilang" name="filter_lost" 
+                        domain="[('incident_type', '=', 'package_lost')]"/>
+                <filter string="🏥 Kesehatan Kurir" name="filter_health" 
+                        domain="[('incident_type', '=', 'courier_health')]"/>
+                <filter string="🚗 Kecelakaan" name="filter_accident" 
+                        domain="[('incident_type', '=', 'accident')]"/>
+                <filter string="❓ Lainnya" name="filter_other" 
+                        domain="[('incident_type', '=', 'other')]"/>
+                
+                <separator/>
+                <filter string="Hari Ini" name="filter_today" 
+                        domain="[('incident_datetime', '&gt;=', datetime.datetime.now().replace(hour=0, minute=0, second=0)), ('incident_datetime', '&lt;=', datetime.datetime.now().replace(hour=23, minute=59, second=59))]"/>
+                <filter string="Minggu Ini" name="filter_this_week" 
+                        domain="[('incident_datetime', '&gt;=', (context_today() - datetime.timedelta(days=context_today().weekday())).strftime('%Y-%m-%d')), ('incident_datetime', '&lt;=', (context_today() + datetime.timedelta(days=6-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                <filter string="Bulan Ini" name="filter_this_month" 
+                        domain="[('incident_datetime', '&gt;=', datetime.datetime.now().replace(day=1, hour=0, minute=0, second=0))]"/>
+                
+                <!-- Group By -->
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_state" 
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Urgensi" name="group_severity" 
+                            context="{'group_by': 'severity'}"/>
+                    <filter string="Tipe Insiden" name="group_type" 
+                            context="{'group_by': 'incident_type'}"/>
+                    <filter string="Pelanggan" name="group_customer" 
+                            context="{'group_by': 'customer_id'}"/>
+                    <filter string="Tanggal Kejadian" name="group_date" 
+                            context="{'group_by': 'incident_datetime:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action Window -->
     <record id="action_courier_incident" model="ir.actions.act_window">
         <field name="name">Log Insiden</field>
         <field name="res_model">courier.incident</field>
-        <field name="view_mode">list,form</field>
-        <field name="context">{}</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="context">{
+            'search_default_filter_draft': 1,
+            'search_default_filter_followup': 1
+        }</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Buat Log Insiden Pertama
+                📝 Buat Log Insiden Pertama
             </p>
             <p>
-                Catat insiden operasional seperti keterlambatan, barang hilang, 
-                atau masalah kesehatan kurir untuk tindak lanjut yang terstruktur.
+                Sistem pencatatan insiden operasional BeraniExpress membantu Anda:
+            </p>
+            <ul>
+                <li>📦 Mencatat kerusakan atau kehilangan paket</li>
+                <li>⏰ Melacak keterlambatan pengiriman</li>
+                <li>🏥 Mendokumentasikan masalah kesehatan kurir</li>
+                <li>🚗 Merekam kecelakaan atau insiden lainnya</li>
+            </ul>
+            <p>
+                Klik tombol <strong>Create</strong> untuk memulai pencatatan insiden baru.
             </p>
         </field>
     </record>
+
+    <!-- Menu Items -->
     <menuitem id="menu_courier_root"
-              name="Courier"
+              name="🚚 BeraniExpress"
               sequence="10"
               web_icon="courier_core,static/description/icon.png"/>
 
     <menuitem id="menu_courier_incident"
-              name="Log Insiden"
+              name="📋 Log Insiden"
               parent="menu_courier_root"
               action="action_courier_incident"
               sequence="10"/>

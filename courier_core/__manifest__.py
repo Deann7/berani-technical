@@ -21,11 +21,17 @@
     'author': 'Deandro Najwan Ahmad Syahbanna',
     'website': 'https://deandronajwan.vercel.app',
     'license': 'LGPL-3',
-    'depends': ['base'],
+    'depends': ['base', 'mail'],
     'data': [
         'security/ir.model.access.csv',
         'views/courier_incident_views.xml',
+        'views/courier_incident_analytics.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'courier_core/static/src/css/courier_core.css',
+        ],
+    },
     'demo': [],
     'installable': True,
     'application': True,
