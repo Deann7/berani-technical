@@ -101,12 +101,6 @@ class CourierIncident(models.Model):
         help='Date and time when the incident was resolved'
     )
     
-    color = fields.Integer(
-        string='Color Index',
-        default=0,
-        help='Color for kanban view'
-    )
-    
     # Button Actions
     def action_mark_followup(self):
         """Change state to follow-up"""
